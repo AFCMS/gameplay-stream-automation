@@ -17,6 +17,7 @@
     }
   },
   "dependencies": {
+    "@react-oauth/google": "^0.13.5",
     "react": "^19.2.6",
     "react-dom": "^19.2.6"
   },
@@ -28,6 +29,7 @@
     "@types/react-dom": "^19.2.3",
     "@vitejs/devtools": "^0.2.0",
     "@vitejs/plugin-react": "^6.0.1",
+    "daisyui": "^5.5.20",
     "eslint": "^10.3.0",
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.2",
@@ -38,5 +40,12 @@
     "typescript": "~6.0.2",
     "typescript-eslint": "^8.59.2",
     "vite": "^8.0.12"
+  },
+  "engines": {
+    "runtime": {
+      "name": "node",
+      "version": "^24.16.0",
+      "onFail": "download"
+    }
   }
 }
