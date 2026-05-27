@@ -1,26 +1,21 @@
-import { useGoogleLogin } from "@react-oauth/google";
+import { useAtomValue } from "jotai";
+
+import { Header } from "./components/Header";
+import { authStateAtom } from "./state/auth";
 
 function App() {
-  const login = useGoogleLogin({
-    scope: "https://www.googleapis.com/auth/youtube.readonly",
-    onSuccess: async (tokenResponse) => {
-      const accessToken = tokenResponse.access_token;
+  const authState = useAtomValue(authStateAtom);
 
-      const res = await fetch(
-        "https://www.googleapis.com/youtube/v3/channels?part=snippet&mine=true",
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        },
-      );
-
-      const data = await res.json();
-      console.log(data);
-    },
-  });
-
-  return <button onClick={() => login()}>Login with Google</button>;
+  return (
+    <div className="bg-base-100 text-base-content min-h-screen">
+      <Header />
+      <main className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 py-10">
+        <section className="card border-base-300 bg-base-200/60 border">
+          <pre>{JSON.stringify(authState.channel?.title, null, 2)}</pre>
+        </section>
+      </main>
+    </div>
+  );
 }
 
 export default App;
