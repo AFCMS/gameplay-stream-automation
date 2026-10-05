@@ -6,7 +6,7 @@ export function Header() {
   return (
     <nav className="navbar border-base-300 bg-base-200/80 border-b px-4">
       <div className="flex-1">
-        <a className="btn btn-ghost text-base sm:text-lg">
+        <a href="/" className="btn btn-ghost text-base sm:text-lg">
           Gameplay Stream Automation
         </a>
       </div>
@@ -27,9 +27,7 @@ export function Header() {
           onClick={() => login()}
           type="button"
         >
-          {isLoading ? (
-            <span className="loading loading-spinner loading-sm" />
-          ) : null}
+          {isLoading ? <span className="loading loading-spinner loading-sm" /> : null}
           {isLoading ? "Connecting..." : "Login with Google"}
         </button>
       </div>

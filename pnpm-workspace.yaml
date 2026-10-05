@@ -8,3 +8,5 @@ trustPolicy: no-downgrade
 trustPolicyExclude:
   - semver
   - tinyexec@1.2.2
+
+pmOnFail: ignore

@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
 import { useAtomValue } from "jotai";
+import { useEffect, useState } from "react";
 
 import { authStateAtom } from "../state/auth";
 import { playlistPostfix } from "../utils/constants";
@@ -118,10 +118,7 @@ const fetchPlaylists = async (
     pageToken = data.nextPageToken;
   } while (pageToken);
 
-  playlists.sort(
-    (first, second) =>
-      Date.parse(second.updatedAt) - Date.parse(first.updatedAt),
-  );
+  playlists.sort((first, second) => Date.parse(second.updatedAt) - Date.parse(first.updatedAt));
 
   return playlists;
 };
@@ -129,13 +126,12 @@ const fetchPlaylists = async (
 export function PlaylistsTable() {
   const authState = useAtomValue(authStateAtom);
   const accessToken = authState.accessToken;
-  const isAuthenticated =
-    authState.status === "authenticated" && accessToken !== null;
-  const [playlistState, setPlaylistState] =
-    useState<PlaylistState>(initialPlaylistState);
+  const isAuthenticated = authState.status === "authenticated" && accessToken !== null;
+  const [playlistState, setPlaylistState] = useState<PlaylistState>(initialPlaylistState);
 
   useEffect(() => {
     if (!isAuthenticated || !accessToken) {
+      // oxlint-disable-next-line react/set-state-in-effect
       setPlaylistState(initialPlaylistState);
       return;
     }
@@ -192,15 +188,15 @@ export function PlaylistsTable() {
           </p>
         </div>
         {!isAuthenticated ? (
-          <div role="status" className="alert alert-info alert-soft">
+          <output className="alert alert-info alert-soft">
             <span>Log in to load your playlists.</span>
-          </div>
+          </output>
         ) : null}
         {isAuthenticated && playlistState.status === "loading" ? (
-          <div role="status" className="alert alert-info alert-soft">
+          <output className="alert alert-info alert-soft">
             <span className="loading loading-spinner loading-sm" />
             <span>Loading playlists...</span>
-          </div>
+          </output>
         ) : null}
         {isAuthenticated && playlistState.status === "error" ? (
           <div role="alert" className="alert alert-error alert-soft">
@@ -210,9 +206,9 @@ export function PlaylistsTable() {
         {isAuthenticated &&
         playlistState.status === "loaded" &&
         playlistState.playlists.length === 0 ? (
-          <div role="status" className="alert alert-warning alert-soft">
+          <output className="alert alert-warning alert-soft">
             <span>No playlists matched this postfix.</span>
-          </div>
+          </output>
         ) : null}
         {isAuthenticated && playlistState.playlists.length > 0 ? (
           <div className="overflow-x-auto">
