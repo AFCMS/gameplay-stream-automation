@@ -1,11 +1,14 @@
 {
-  "$schema": "./node_modules/wrangler/config-schema.json",
   "name": "gameplay-stream-automation",
   "main": "./worker/index.ts",
   "compatibility_date": "2026-10-08",
   "assets": {
     "not_found_handling": "single-page-application",
     "run_worker_first": ["/auth/*", "/api/*"],
+  },
+  "vars": {
+    "APP_ORIGIN": "https://gameplay-stream-automation.afcm-contact.workers.dev",
+    "GOOGLE_CLIENT_ID": "845103940538-6lfie6m5eddbvsevaheebirb9crnb1io.apps.googleusercontent.com",
   },
   "observability": { "enabled": false },
 }
