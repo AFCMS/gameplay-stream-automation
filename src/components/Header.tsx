@@ -1,36 +1,60 @@
+import { useSetAtom } from "jotai";
+
 import { useLogin } from "../hooks/login";
+import { authStateAtom } from "../state/auth";
 
 export function Header() {
-  const { channel, isLoading, isLoggedIn, login } = useLogin();
+  const { authState, login, disconnect } = useLogin();
+  const setAuth = useSetAtom(authStateAtom);
+  const connecting = authState.status === "loading";
+  const connected = authState.status === "authenticated";
 
   return (
-    <nav className="navbar border-base-300 bg-base-200/80 border-b px-4">
-      <div className="flex-1">
-        <a href="/" className="btn btn-ghost text-base sm:text-lg">
-          Gameplay Stream Automation
-        </a>
+    <header className="border-base-300 border-b">
+      <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 px-5 py-5 sm:px-8">
+        <div className="text-lg font-semibold tracking-tight">Gameplay Stream Automation</div>
+        <div className="flex flex-wrap items-center gap-3">
+          {authState.channel ? (
+            authState.channels.length > 1 ? (
+              <select
+                className="select select-sm max-w-56"
+                aria-label="Connected YouTube channel"
+                value={authState.channel.id}
+                onChange={(event) =>
+                  setAuth((previous) => ({
+                    ...previous,
+                    channel:
+                      previous.channels.find((channel) => channel.id === event.target.value) ??
+                      null,
+                  }))
+                }
+              >
+                {authState.channels.map((channel) => (
+                  <option key={channel.id} value={channel.id}>
+                    {channel.title}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <span className="text-base-content/70 text-sm">{authState.channel.title}</span>
+            )
+          ) : null}
+          <button className="btn btn-sm" disabled={connecting} type="button" onClick={login}>
+            {connecting
+              ? "Connecting…"
+              : connected
+                ? "Switch Google account"
+                : authState.channel
+                  ? "Reconnect Google"
+                  : "Connect YouTube"}
+          </button>
+          {authState.channel ? (
+            <button className="btn btn-sm" type="button" onClick={disconnect}>
+              Disconnect
+            </button>
+          ) : null}
+        </div>
       </div>
-      <div className="flex flex-row items-center gap-3">
-        {isLoggedIn && channel ? (
-          <div className="flex items-center gap-2">
-            <div className="hidden flex-col text-right sm:flex">
-              <span className="text-base-content/60 text-xs tracking-wide uppercase">
-                Selected channel
-              </span>
-              <span className="text-sm font-semibold">{channel.title}</span>
-            </div>
-          </div>
-        ) : null}
-        <button
-          className="btn btn-primary btn-sm sm:btn-md"
-          disabled={isLoading}
-          onClick={() => login()}
-          type="button"
-        >
-          {isLoading ? <span className="loading loading-spinner loading-sm" /> : null}
-          {isLoading ? "Connecting..." : "Login with Google"}
-        </button>
-      </div>
-    </nav>
+    </header>
   );
 }

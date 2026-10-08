@@ -1,139 +1,98 @@
 import { useGoogleLogin } from "@react-oauth/google";
 import { useAtom } from "jotai";
+import { useEffect, useRef } from "react";
 
-import { authStateAtom, type AuthState, type ChannelSummary } from "../state/auth";
+import { errorMessage } from "../domain/types";
+import { YouTubeClient } from "../services/youtube";
+import { authStateAtom, initialAuthState } from "../state/auth";
 
-const YOUTUBE_SCOPE = "https://www.googleapis.com/auth/youtube";
-const CHANNELS_ENDPOINT = "https://www.googleapis.com/youtube/v3/channels?part=snippet&mine=true";
-
-interface YoutubeChannelThumbnail {
-  readonly url?: string;
-}
-
-interface YoutubeChannelThumbnails {
-  readonly default?: YoutubeChannelThumbnail;
-  readonly medium?: YoutubeChannelThumbnail;
-  readonly high?: YoutubeChannelThumbnail;
-}
-
-interface YoutubeChannelSnippet {
-  readonly title?: string;
-  readonly thumbnails?: YoutubeChannelThumbnails;
-}
-
-interface YoutubeChannelItem {
-  readonly id?: string;
-  readonly snippet?: YoutubeChannelSnippet;
-}
-
-interface YoutubeChannelResponse {
-  readonly items?: readonly YoutubeChannelItem[];
-}
-
-type LoginHandler = ReturnType<typeof useGoogleLogin>;
-
-export interface UseLoginResult {
-  readonly login: LoginHandler;
-  readonly authState: AuthState;
-  readonly isLoading: boolean;
-  readonly isLoggedIn: boolean;
-  readonly channel: ChannelSummary | null;
-}
-
-const getThumbnailUrl = (snippet: YoutubeChannelSnippet | undefined): string | null => {
-  const thumbnails = snippet?.thumbnails;
-  return thumbnails?.high?.url ?? thumbnails?.medium?.url ?? thumbnails?.default?.url ?? null;
-};
-
-const getErrorMessage = (error: unknown): string => {
-  if (error instanceof Error && error.message.length > 0) {
-    return error.message;
-  }
-
-  return "Unable to load your YouTube channel.";
-};
-
-export function useLogin(): UseLoginResult {
+export function useLogin() {
   const [authState, setAuthState] = useAtom(authStateAtom);
-  const login = useGoogleLogin({
-    scope: YOUTUBE_SCOPE,
-    onSuccess: async (tokenResponse) => {
-      const accessToken = tokenResponse.access_token;
-      if (!accessToken) {
-        setAuthState({
-          status: "error",
-          accessToken: null,
-          channel: null,
-          errorMessage: "Google login did not return an access token.",
-        });
-        return;
-      }
+  const generation = useRef(0);
 
-      setAuthState({
-        status: "loading",
-        accessToken,
-        channel: null,
-        errorMessage: null,
-      });
+  const googleLogin = useGoogleLogin({
+    scope: "https://www.googleapis.com/auth/youtube",
+    onSuccess: async (response) => {
+      const attempt = ++generation.current;
+      const expiresAt = Date.now() + response.expires_in * 1000;
+
+      setAuthState((previous) => ({ ...previous, status: "loading", errorMessage: null }));
 
       try {
-        const response = await fetch(CHANNELS_ENDPOINT, {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        });
+        const api = new YouTubeClient(() => response.access_token);
+        const channels = await api.channels();
 
-        if (!response.ok) {
-          throw new Error(`YouTube API error (${response.status}).`);
+        if (attempt !== generation.current) {
+          return;
         }
 
-        const data = (await response.json()) as YoutubeChannelResponse;
-        const channel = data.items?.[0];
-        const channelTitle = channel?.snippet?.title;
-        const channelId = channel?.id;
-
-        if (!channelId || !channelTitle) {
-          throw new Error("No YouTube channels were returned.");
+        if (!channels.length) {
+          throw new Error("Google did not return a YouTube channel for this account.");
         }
 
         setAuthState({
           status: "authenticated",
-          accessToken,
-          channel: {
-            id: channelId,
-            title: channelTitle,
-            thumbnailUrl: getThumbnailUrl(channel.snippet),
-          },
+          accessToken: response.access_token,
+          expiresAt,
+          channels,
+          channel: channels[0],
           errorMessage: null,
         });
       } catch (error) {
-        setAuthState({
-          status: "error",
-          accessToken: null,
-          channel: null,
-          errorMessage: getErrorMessage(error),
-        });
+        if (attempt === generation.current) {
+          setAuthState((previous) => ({
+            ...previous,
+            status: "error",
+            accessToken: null,
+            errorMessage: errorMessage(error),
+          }));
+        }
       }
     },
-    onError: () => {
-      setAuthState({
+    onError: () =>
+      setAuthState((previous) => ({
+        ...previous,
         status: "error",
         accessToken: null,
-        channel: null,
-        errorMessage: "Google login failed. Please try again.",
-      });
-    },
+        errorMessage: "Google connection failed. Please try again.",
+      })),
+    onNonOAuthError: () =>
+      setAuthState((previous) => ({
+        ...previous,
+        status: previous.accessToken ? "authenticated" : "idle",
+        errorMessage: "The Google sign-in window was closed or blocked. Try connecting again.",
+      })),
   });
 
-  const isLoading = authState.status === "loading";
-  const isLoggedIn = authState.status === "authenticated" && authState.channel !== null;
-  const channel = authState.channel;
+  useEffect(() => {
+    if (!authState.expiresAt || authState.status !== "authenticated") {
+      return;
+    }
 
-  return {
-    login,
-    authState,
-    isLoading,
-    isLoggedIn,
-    channel,
-  };
+    const timer = window.setTimeout(
+      () => {
+        setAuthState((previous) => ({
+          ...previous,
+          status: "expired",
+          accessToken: null,
+          errorMessage: "Your Google connection expired. Reconnect to continue.",
+        }));
+      },
+      Math.max(0, authState.expiresAt - Date.now() - 30_000),
+    );
+
+    return () => window.clearTimeout(timer);
+  }, [authState.expiresAt, authState.status, setAuthState]);
+
+  function login() {
+    setAuthState((previous) => ({ ...previous, status: "loading", errorMessage: null }));
+    googleLogin();
+  }
+
+  function disconnect() {
+    generation.current++;
+    setAuthState(initialAuthState);
+  }
+
+  return { authState, login, disconnect };
 }
