@@ -49,7 +49,7 @@ export function Header() {
                   : "Connect YouTube"}
           </button>
           {authState.channel ? (
-            <button className="btn btn-sm" type="button" onClick={disconnect}>
+            <button className="btn btn-sm" disabled={connecting} type="button" onClick={disconnect}>
               Disconnect
             </button>
           ) : null}

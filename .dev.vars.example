@@ -1,0 +1,6 @@
+# Runtime configuration for the Worker. Copy to .dev.vars; never commit secrets.
+APP_ORIGIN=http://localhost:5173
+GOOGLE_CLIENT_ID=your-web-oauth-client-id.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=your-google-oauth-client-secret
+# Generate a 32-byte base64 key: openssl rand -base64 32
+COOKIE_ENCRYPTION_KEY=replace-with-a-random-32-byte-base64-key

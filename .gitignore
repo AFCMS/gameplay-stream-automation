@@ -218,3 +218,8 @@ $RECYCLE.BIN/
 # End of https://www.toptal.com/developers/gitignore/api/node,linux,windows,macos
 
 .devtools-oxc
+
+# Cloudflare local runtime and server-only secrets
+.wrangler/
+.dev.vars*
+!.dev.vars.example

@@ -52,10 +52,10 @@ export class YouTubeError extends Error {
 }
 
 export class YouTubeClient {
-  private getToken: () => string;
+  private getToken: () => string | Promise<string>;
   private fetcher: typeof fetch;
 
-  constructor(getToken: () => string, fetcher: typeof fetch = fetch) {
+  constructor(getToken: () => string | Promise<string>, fetcher: typeof fetch = fetch) {
     this.getToken = getToken;
     // Browser fetch requires Window as its receiver, even when stored on a client instance.
     this.fetcher = fetcher.bind(globalThis);
@@ -73,7 +73,7 @@ export class YouTubeClient {
     }
 
     const headers = new Headers(init.headers);
-    headers.set("Authorization", `Bearer ${this.getToken()}`);
+    headers.set("Authorization", `Bearer ${await this.getToken()}`);
 
     if (typeof init.body === "string") {
       headers.set("Content-Type", "application/json");

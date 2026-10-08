@@ -1,5 +1,7 @@
 allowBuilds:
   "@tailwindcss/oxide": true
+  esbuild: true
+  workerd: true
 
 # Supply chain security settings
 blockExoticSubdeps: true

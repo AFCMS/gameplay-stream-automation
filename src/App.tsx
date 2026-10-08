@@ -8,11 +8,12 @@ import { HelperPanel } from "./components/HelperPanel";
 import { OperationCard } from "./components/Operations";
 import { PlaylistEditor } from "./components/PlaylistEditor";
 import { errorMessage, type BroadcastOperation, type ManagedPlaylist } from "./domain/types";
+import { authSessionFor } from "./services/auth";
 import { createBroadcastService, isUnfinished, withChannelLock } from "./services/broadcasts";
 import { gameHelper } from "./services/helper";
 import { syncLibrary } from "./services/sync";
 import { YouTubeClient } from "./services/youtube";
-import { accessTokenForChannel, authStateAtom, type ChannelSummary } from "./state/auth";
+import { authStateAtom, type ChannelSummary } from "./state/auth";
 import { exportLibrary, importLibrary } from "./storage/backup";
 import { libraryStore } from "./storage/database";
 
@@ -43,11 +44,7 @@ function Workspace({ channel }: { channel: ChannelSummary }) {
   const [embedRevision, setEmbedRevision] = useState(0);
 
   const api = useMemo(
-    () =>
-      new YouTubeClient(() => {
-        const state = atomStore.get(authStateAtom);
-        return accessTokenForChannel(state, channel.id);
-      }),
+    () => new YouTubeClient(() => authSessionFor(atomStore).accessToken(channel.id)),
     [atomStore, channel.id],
   );
 

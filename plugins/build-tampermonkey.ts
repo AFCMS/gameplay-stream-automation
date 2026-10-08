@@ -106,6 +106,10 @@ export function buildTampermonkey(): Plugin {
     },
 
     async generateBundle() {
+      if (this.environment.name !== "client") {
+        return;
+      }
+
       const { code, files } = await bundleHelper(config.root, origin);
 
       for (const file of files) {

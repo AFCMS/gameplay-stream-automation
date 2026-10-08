@@ -1,97 +1,52 @@
-import { useGoogleLogin } from "@react-oauth/google";
-import { useAtom } from "jotai";
-import { useEffect, useRef } from "react";
+import { useAtomValue, useStore } from "jotai";
+import { useEffect, useMemo } from "react";
 
-import { errorMessage } from "../domain/types";
-import { YouTubeClient } from "../services/youtube";
-import { authStateAtom, initialAuthState } from "../state/auth";
+import { authSessionFor, consumeLoginError } from "../services/auth";
+import { authStateAtom } from "../state/auth";
 
 export function useLogin() {
-  const [authState, setAuthState] = useAtom(authStateAtom);
-  const generation = useRef(0);
-
-  const googleLogin = useGoogleLogin({
-    scope: "https://www.googleapis.com/auth/youtube",
-    onSuccess: async (response) => {
-      const attempt = ++generation.current;
-      const expiresAt = Date.now() + response.expires_in * 1000;
-
-      setAuthState((previous) => ({ ...previous, status: "loading", errorMessage: null }));
-
-      try {
-        const api = new YouTubeClient(() => response.access_token);
-        const channels = await api.channels();
-
-        if (attempt !== generation.current) {
-          return;
-        }
-
-        if (!channels.length) {
-          throw new Error("Google did not return a YouTube channel for this account.");
-        }
-
-        setAuthState({
-          status: "authenticated",
-          accessToken: response.access_token,
-          expiresAt,
-          channels,
-          channel: channels[0],
-          errorMessage: null,
-        });
-      } catch (error) {
-        if (attempt === generation.current) {
-          setAuthState((previous) => ({
-            ...previous,
-            status: "error",
-            accessToken: null,
-            errorMessage: errorMessage(error),
-          }));
-        }
-      }
-    },
-    onError: () =>
-      setAuthState((previous) => ({
-        ...previous,
-        status: "error",
-        accessToken: null,
-        errorMessage: "Google connection failed. Please try again.",
-      })),
-    onNonOAuthError: () =>
-      setAuthState((previous) => ({
-        ...previous,
-        status: previous.accessToken ? "authenticated" : "idle",
-        errorMessage: "The Google sign-in window was closed or blocked. Try connecting again.",
-      })),
-  });
+  const store = useStore();
+  const authState = useAtomValue(authStateAtom);
+  const session = useMemo(() => authSessionFor(store), [store]);
 
   useEffect(() => {
-    if (!authState.expiresAt || authState.status !== "authenticated") {
-      return;
-    }
-
-    const timer = window.setTimeout(
-      () => {
-        setAuthState((previous) => ({
-          ...previous,
-          status: "expired",
-          accessToken: null,
-          errorMessage: "Your Google connection expired. Reconnect to continue.",
-        }));
-      },
-      Math.max(0, authState.expiresAt - Date.now() - 30_000),
-    );
-
-    return () => window.clearTimeout(timer);
-  }, [authState.expiresAt, authState.status, setAuthState]);
+    const loginError = consumeLoginError();
+    void session
+      .restore()
+      .catch(() => {})
+      .then(() => {
+        if (loginError)
+          store.set(authStateAtom, (previous) => ({ ...previous, errorMessage: loginError }));
+      });
+    const renew = () => {
+      void session.renewIfNeeded().catch(() => {});
+    };
+    const visible = () => {
+      if (document.visibilityState === "visible") renew();
+    };
+    const timer = window.setInterval(renew, 30_000);
+    window.addEventListener("pageshow", renew);
+    window.addEventListener("focus", renew);
+    document.addEventListener("visibilitychange", visible);
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener("pageshow", renew);
+      window.removeEventListener("focus", renew);
+      document.removeEventListener("visibilitychange", visible);
+    };
+  }, [session, store]);
 
   function login() {
-    setAuthState((previous) => ({ ...previous, status: "loading", errorMessage: null }));
-    googleLogin();
+    store.set(authStateAtom, (previous) => ({
+      ...previous,
+      status: "loading",
+      errorMessage: null,
+    }));
+    window.location.assign("/auth/start");
   }
 
   function disconnect() {
-    generation.current++;
-    setAuthState(initialAuthState);
+    void session.disconnect().catch(() => {});
   }
 
   return { authState, login, disconnect };

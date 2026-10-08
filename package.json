@@ -11,15 +11,16 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "lint": "oxlint",
-    "preview": "vite preview"
+    "preview": "vite preview --host 127.0.0.1 --port 5173 --strictPort",
+    "deploy": "pnpm build && wrangler deploy"
   },
   "dependencies": {
-    "@react-oauth/google": "^0.13.5",
     "jotai": "^3.0.1",
     "react": "^19.3.0",
     "react-dom": "^19.3.0"
   },
   "devDependencies": {
+    "@cloudflare/vite-plugin": "^1.63.0",
     "@tailwindcss/vite": "^4.3.3",
     "@types/node": "^24.12.3",
     "@types/react": "^19.3.0",
@@ -41,7 +42,8 @@
     "tailwindcss": "^4.3.3",
     "typescript": "~7.0.2",
     "vite": "^8.3.3",
-    "vitest": "^5.0.3"
+    "vitest": "^5.0.3",
+    "wrangler": "4.148.0"
   },
   "devEngines": {
     "packageManager": {
