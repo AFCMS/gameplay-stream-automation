@@ -37,7 +37,7 @@
     "oxc-transform-react": "^0.153.0",
     "oxfmt": "^0.72.0",
     "oxlint": "^1.87.0",
-    "oxlint-tsgolint": "^7.0.2003",
+    "oxlint-tsgolint": "^7.0.2004",
     "rolldown": "~1.2.13",
     "tailwindcss": "^4.3.3",
     "typescript": "~7.0.2",
