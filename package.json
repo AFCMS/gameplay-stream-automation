@@ -41,7 +41,7 @@
     "rolldown": "~1.2.13",
     "tailwindcss": "^4.3.3",
     "typescript": "~7.0.2",
-    "vite": "^8.3.3",
+    "vite": "^8.3.4",
     "vitest": "^5.0.3",
     "wrangler": "4.148.0"
   },
