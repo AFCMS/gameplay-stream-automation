@@ -7,7 +7,7 @@ React SPA for managing gameplay playlists and preparing public YouTube broadcast
 
 ## Setup
 
-Requires Node 24, pnpm 12, and Tampermonkey.
+Requires Node 26, pnpm 12, and Tampermonkey.
 
 ```sh
 pnpm install
